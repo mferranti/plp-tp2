@@ -46,3 +46,10 @@ juntar_con([[X|XS]|LS], J, [X|R]):- juntar_con([XS|LS], J, R).
 palabras(LS, [L1|P]) :- append(L1, [espacio|L2], LS), palabras(L2,P). 
 palabras(LS, [LS]) :- not(append(_, [espacio|_], LS)). 
 
+
+% Ejercicio 4
+% asignar_var(A, MI, MF)
+
+asignar_var(A, MI, [(A,_)|MI]):- not(member((A,_),MI)).
+asignar_var(A, MI, MI):- member((A,_),MI).
+
