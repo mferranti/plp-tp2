@@ -35,17 +35,13 @@ diccionario_lista(Codes) :- diccionario(X), string_codes(X,Codes).
 % Ejercicio 2
 %juntar_con(+L, +J, -R).
 
-juntar_con([], _, []).
-juntar_con([[X|[]]|LS], J, [X,J|R]):- juntar_con(LS, J, R).
-juntar_con([[X|XS]|LS], J, [X|R]):- juntar_con([XS|LS], J, R).
+juntar_con([L|LS], J, R):- append(L, [J|L2], R), juntar_con(LS,J,L2).
+juntar_con([LS], J, LS) :- not(append(_, [J|_], LS)).
 
 % Ejercicio 3
 
 %palabras(S, P).
-
-palabras(LS, [L1|P]) :- append(L1, [espacio|L2], LS), palabras(L2,P). 
-palabras(LS, [LS]) :- not(append(_, [espacio|_], LS)). 
-
+palabras(S,P):- juntar_con(P, espacio, S).
 
 % Ejercicio 4
 % asignar_var(A, MI, MF)
