@@ -75,3 +75,18 @@ palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):-
 zip([],[],[]).
 zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
 
+
+% Ejercicio 6
+% quitar(E, L, R).
+
+quitar(_,[],[]).
+
+quitar(E,[A|L],R):- var(E), var(A), E==A, quitar(E,L,R).
+quitar(E,[A|L],[A|R]):- var(E), var(A), E\==A, quitar(E,L,R).
+
+quitar(E,[A|L],[A|R]):- var(E), nonvar(A), quitar(E,L,R).
+quitar(E,[A|L],[A|R]):- nonvar(E), var(A), quitar(E,L,R).
+
+quitar(E,[A|L],[A|R]):- nonvar(E), nonvar(A), E\==A, quitar(E,L,R).
+quitar(E,[A|L],R):- nonvar(E), nonvar(A), E==A, quitar(E,L,R).
+
