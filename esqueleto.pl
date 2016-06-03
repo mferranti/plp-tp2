@@ -90,3 +90,7 @@ quitar(E,[A|L],[A|R]):- nonvar(E), var(A), quitar(E,L,R).
 quitar(E,[A|L],[A|R]):- nonvar(E), nonvar(A), E\==A, quitar(E,L,R).
 quitar(E,[A|L],R):- nonvar(E), nonvar(A), E==A, quitar(E,L,R).
 
+% Ejercicio 7
+% cant_distintos(L, S).
+cant_distintos([],0).
+cant_distintos([A|L],S):- quitar(A,L,R), cant_distintos(R,T), S is T+1.
