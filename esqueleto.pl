@@ -49,3 +49,29 @@ palabras(S,P):- juntar_con(P, espacio, S).
 asignar_var(A, MI, [(A,_)|MI]):- not(member((A,_),MI)).
 asignar_var(A, MI, MI):- member((A,_),MI).
 
+
+% Ejercicio 5
+
+palabras_con_variables([],[]).
+palabras_con_variables([[A]|P],[[T]|V]):-
+  palabras_con_variables(P,V),
+  append(P,ConcatedP),
+  append(V,ConcatedV),
+  zip(ConcatedP,ConcatedV, ZippedPV),
+  list_to_set(ZippedPV,WithoutRepeatPV),
+  asignar_var(A,WithoutRepeatPV,MF),
+  member((A,T),MF).
+
+palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):-
+  TailA \= [],
+  palabras_con_variables([TailA|P],[TailT|V]),
+  append([TailA|P],ConcatedP),
+  append([TailT|V],ConcatedV),
+  zip(ConcatedP,ConcatedV, ZippedPV),
+  list_to_set(ZippedPV,WithoutRepeatPV),
+  asignar_var(A,WithoutRepeatPV,MF),
+  member((A,T),MF).
+
+zip([],[],[]).
+zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
+
