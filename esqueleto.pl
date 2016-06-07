@@ -94,3 +94,54 @@ quitar(E,[A|L],R):- nonvar(E), nonvar(A), E==A, quitar(E,L,R).
 % cant_distintos(L, S).
 cant_distintos([],0).
 cant_distintos([A|L],S):- quitar(A,L,R), cant_distintos(R,T), S is T+1.
+
+% Ejercicio 8
+% descifrar(S, M)
+
+descifrar(S,M):-
+  findall(Sol,descifrar_soluciones(S,Sol),Sol),
+  list_to_set(Sol,C),
+  member(M,C).
+
+descifrar_soluciones([],_).
+descifrar_soluciones(S,M):-
+  diccionario_lista(L),
+  palabras(S, P),
+  palabras_con_variables(P, N),
+  matchear_palabra(L,N,MCodes),
+  diccionario_lista(L2),
+  matchear_palabra(L2,MCodes,MCodes2),
+  ground(MCodes2),
+  setof(_,maplist(string_codes,MList,MCodes2),_),
+  implode(MList," ",M).
+
+matchear_palabra(_,[],[]).
+matchear_palabra(L,[A|N],[B|M]):-
+  length(L, LengthL),
+  length(A, LengthA),
+  LengthL=:=LengthA,
+  cambiar_var_por_valor(L,A),
+  B=A,
+  matchear_palabra(L,N,M).
+
+matchear_palabra(L,[A|N],[B|M]):-
+  length(L, LengthL),
+  length(A, LengthA),
+  LengthL=\=LengthA,
+  B=A,
+  matchear_palabra(L,N,M).
+
+cambiar_var_por_valor([],[]).
+cambiar_var_por_valor([L|LS], [A|AS]):-
+  A=L,
+  cambiar_var_por_valor(LS,AS).
+
+implode([],_,"").
+implode([A],_,A).
+implode([A|XS],C,S):-
+  XS \= [],
+  implode(XS,C,R),
+  string_concat(A,C,T),
+  string_concat(T,R,S).
+
+
