@@ -174,43 +174,31 @@ cant_distintos([A|L],S):- quitar(A,L,R),
 % diccionario/1
 %
 descifrar(S,M):-
-  findall(Sol,descifrar_soluciones(S,Sol),Sol),
-  list_to_set(Sol,C),
-  member(M,C).
-
-%
-% descifrar_soluciones/2
-%
-descifrar_soluciones([],_).
-descifrar_soluciones(S,M):-
-  diccionario_lista(L),
-  palabras(S, P),
-  palabras_con_variables(P, N),
-  matchear_palabra(L,N,MCodes),
-  diccionario_lista(L2),
-  matchear_palabra(L2,MCodes,MCodes2),
-  ground(MCodes2),
-  setof(_,maplist(string_codes,MList,MCodes2),_),
+  palabras(S,P),
+  palabras_con_variables(P,N),
+  generar_soluciones(N,MCodes),
+  ground(MCodes),
+  setof(_,maplist(string_codes,MList,MCodes),_),
   implode(MList," ",M).
 
 %
-% matchear_palabra/2
+% generar_soluciones/2
 %
-matchear_palabra(_,[],[]).
-matchear_palabra(L,[A|N],[B|M]):-
-  length(L, LengthL),
-  length(A, LengthA),
-  LengthL=:=LengthA,
-  cambiar_var_por_valor(L,A),
-  B=A,
-  matchear_palabra(L,N,M).
+generar_soluciones([],[]).
+generar_soluciones([N|NS],[M|MCodes]):-
+  diccionario_lista(L),
+  match(L,N,M),
+  generar_soluciones(NS,MCodes).
 
-matchear_palabra(L,[A|N],[B|M]):-
+%
+% match/3
+%
+match(L,N,M):-
   length(L, LengthL),
-  length(A, LengthA),
-  LengthL=\=LengthA,
-  B=A,
-  matchear_palabra(L,N,M).
+  length(N, LengthN),
+  LengthL=:=LengthN,
+  cambiar_var_por_valor(L,N),
+  M=N.
 
 %
 % cambiar_var_por_valor/2
@@ -250,3 +238,4 @@ implode([A|XS],C,S):-
 %
 % Falta implementar.
 %
+
