@@ -65,8 +65,13 @@ juntar_con([LS], J, LS) :- not(append(_, [J|_], LS)).
 % la implementacion de este punto es trivial.
 % Es reversible.
 %
-palabras(S,P):- juntar_con(P, espacio, S).
 
+%palabras(S,P):- juntar_con(P, espacio, S).
+palabras(S,P):-
+  juntar_con(P, espacio, S),
+  append(P,R),
+  not(member(espacio, R)).
+  
 %==============================================================
 %
 % EJERCICIO 4
@@ -95,6 +100,14 @@ asignar_var(A, MI, MI):- member((A,_),MI).
 palabras_con_variables([],[]).
 palabras_con_variables([[A]|P],[[T]|V]):-
   palabras_con_variables(P,V),
+  asignar_misma_var(P,V,A,T).
+
+palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):-
+  TailA \= [],
+  palabras_con_variables([TailA|P],[TailT|V]),
+  asignar_misma_var([TailA|P],[TailT|V],A,T).
+
+asignar_misma_var(P,V,A,T):-
   append(P,ConcatedP),
   append(V,ConcatedV),
   zip(ConcatedP,ConcatedV, ZippedPV),
@@ -102,23 +115,7 @@ palabras_con_variables([[A]|P],[[T]|V]):-
   asignar_var(A,WithoutRepeatPV,MF),
   member((A,T),MF).
 
-palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):-
-  TailA \= [],
-  palabras_con_variables([TailA|P],[TailT|V]),
-  append([TailA|P],ConcatedP),
-  append([TailT|V],ConcatedV),
-  zip(ConcatedP,ConcatedV, ZippedPV),
-  list_to_set(ZippedPV,WithoutRepeatPV),
-  asignar_var(A,WithoutRepeatPV,MF),
-  member((A,T),MF).
 
-%
-% zip
-% zip/3
-% zip(+X,+Y,-Z)
-%
-% Implentacion de la funciona clasica zip
-%
 zip([],[],[]).
 zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
 
@@ -137,14 +134,8 @@ zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
 %
 quitar(_,[],[]).
 
-quitar(E,[A|L],R):- var(E), var(A), E==A, quitar(E,L,R).
-quitar(E,[A|L],[A|R]):- var(E), var(A), E\==A, quitar(E,L,R).
-
-quitar(E,[A|L],[A|R]):- var(E), nonvar(A), quitar(E,L,R).
-quitar(E,[A|L],[A|R]):- nonvar(E), var(A), quitar(E,L,R).
-
-quitar(E,[A|L],[A|R]):- nonvar(E), nonvar(A), E\==A, quitar(E,L,R).
-quitar(E,[A|L],R):- nonvar(E), nonvar(A), E==A, quitar(E,L,R).
+quitar(E,[A|L],R):- E==A, quitar(E,L,R).
+quitar(E,[A|L],[A|R]):- E\==A, quitar(E,L,R).
 
 %==============================================================
 %
@@ -193,19 +184,17 @@ generar_soluciones([N|NS],[M|MCodes]):-
 %
 % match/3
 %
-match(L,N,M):-
+match(L,N,N):-
   length(L, LengthL),
   length(N, LengthN),
   LengthL=:=LengthN,
-  cambiar_var_por_valor(L,N),
-  M=N.
+  cambiar_var_por_valor(L,N).
 
 %
 % cambiar_var_por_valor/2
 %
 cambiar_var_por_valor([],[]).
-cambiar_var_por_valor([L|LS], [A|AS]):-
-  A=L,
+cambiar_var_por_valor([L|LS], [L|AS]):-
   cambiar_var_por_valor(LS,AS).
 
 %
@@ -229,6 +218,27 @@ implode([A|XS],C,S):-
 % Falta implementar.
 %
 
+descifrar_sin_espacios(S,M):-
+  separar_con_espacios(S,E),
+  descifrar(E,M).
+
+separar_con_espacios([],[]).
+separar_con_espacios(S,E):-
+  agregar_espacios(S,E),
+  last(E,M),
+  M \== espacio.
+
+%  append(L1,L2,S),
+%  select(espacio,E1, L1),
+%  select(espacio,E2, L2),
+%  append(E1,E2, E).
+  
+agregar_espacios([],[]).
+agregar_espacios([S|SS],[S,espacio|EE]):- agregar_espacios(SS,EE).
+agregar_espacios([S|SS],[S|EE]):- agregar_espacios(SS,EE).
+
+
+
 %==============================================================
 %
 % EJERCICIO 10
@@ -238,4 +248,3 @@ implode([A|XS],C,S):-
 %
 % Falta implementar.
 %
-
