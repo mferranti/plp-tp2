@@ -1,4 +1,4 @@
-:- dynamic(diccionario/1).
+  :- dynamic(diccionario/1).
 
 % Dado un nombre de archivo que contiene todas las palabras que se quieren
 % agregar al diccionario (una por linea), vacia diccionario/1 y agrega
@@ -45,10 +45,15 @@ diccionario_lista(Codes) :- diccionario(X),
 % EJERCICIO 2
 % 
 % juntar_con/3
-% juntar_con(+L, +J, -R)
+% juntar_con(?L, +J, ?R)
 %
-% La hicimos reversible para simplificar 
-% la resolución del ejercicio 3.
+% Si se instancia L y J, instancia en R lo pedido.
+% Si se instancia J y R, instancia en L las posibles
+% listas de listas que forman R si se usa J como limitador
+% Por ahora no se tiene en cuenta el caso de la palabra
+% 'espacio' que tiene un comportamiento especial en el tp
+% ya que no debería ser un elemento de una de las sublistas de L.
+% En este punto no nos interesa.
 %
 juntar_con([L|LS], J, R):- append(L, [J|L2], R), 
                            juntar_con(LS,J,L2).
@@ -61,16 +66,17 @@ juntar_con([LS], J, LS) :- not(append(_, [J|_], LS)).
 % palabras/2
 % palabras(+S, -P)
 %
-% Utilizando la reversibilidad del anterior punto la 
-% la implementacion de este punto es trivial.
-% Es reversible.
+% Dada S instanciada una lista de simbolos, instancia en P
+% una lista de listas, donde cada lista es una palabra.  
+% Donde cada palabra de S se identifica si es separada
+% por el simbolo 'espacio'.
+% En este punto usamos juntar_con, pero aqui tenemos
+% que agregar la restricción para que el simbolo 'espacio'
+% no quede dentro de una palabra.
 %
-
-%palabras(S,P):- juntar_con(P, espacio, S).
-palabras(S,P):-
-  juntar_con(P, espacio, S),
-  append(P,R),
-  not(member(espacio, R)).
+palabras(S,P):- juntar_con(P, espacio, S),
+                append(P,R),
+                not(member(espacio, R)).
   
 %==============================================================
 %
@@ -79,8 +85,15 @@ palabras(S,P):-
 % asignar_var/3
 % asignar_var(+A, +MI, -MF)
 %
-% ¿Por qué funciona? - Falta responder. 
+% A debe ser un atomo y MI una lista de tuplas (atomo, var_fresca), ambas 
+% deben estar instanciadas para que se instancie en MF un mapeo que contenga
+% los mismos elementos que MI más una correspondencia para el símbolo A (si no 
+% estaba presente en MI). 
 %
+% Esto funciona ya que asignar_var pone una var fresca para un atomo, y como 
+% sabemos una ver fresca puede unificar con otra var fresca (o cualquier otra 
+% cosa). Por lo tanto cuando se trata asignar un atomo que ya está en la 
+% lista, la unificación se produce sin inconvenientes.
 %
 asignar_var(A, MI, [(A,_)|MI]):- not(member((A,_),MI)).
 asignar_var(A, MI, MI):- member((A,_),MI).
@@ -92,21 +105,30 @@ asignar_var(A, MI, MI):- member((A,_),MI).
 % palabras_con_variables/2
 % palabras_con_variables(+P, -V)
 %
-% En esta función tuvimos que implementar 
-% zip como auxilir para poder resolver 
-% el problema.
+% Dada P instanciada en una lista de listas de atomos, se instancia en V   
+% una lista de listas de variables, donde a cada atomo le corresponde 
+% una unica variable.
 %
 %
 palabras_con_variables([],[]).
-palabras_con_variables([[A]|P],[[T]|V]):-
-  palabras_con_variables(P,V),
-  asignar_misma_var(P,V,A,T).
-
-palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):-
-  TailA \= [],
-  palabras_con_variables([TailA|P],[TailT|V]),
-  asignar_misma_var([TailA|P],[TailT|V],A,T).
-
+palabras_con_variables([[A]|P],[[T]|V]):- palabras_con_variables(P,V),
+                                          asignar_misma_var(P,V,A,T).
+palabras_con_variables([[A|TailA]|P], [[T|TailT]|V]):- TailA \= [],
+                                          palabras_con_variables([TailA|P],[TailT|V]),
+                                          asignar_misma_var([TailA|P],[TailT|V],A,T).
+%
+% asignar_misma_var/4
+% asignar_misma_var(+P,+V,+A,-T)
+%
+% Sea P una lista instanciada de listas de atomos
+% Sea V la lista instanciada de listas de var frescar
+% relacionadas con los atomos de P, donde a cada atomo
+% le corresponde una una variable.
+% Sea A un atomo instanciado. Se instancia en T
+% una var fresca para A, nueva si A no está en alguna
+% sublista de P y en lo contrario la varfresca de V
+% relacionada con ese atomo.
+%
 asignar_misma_var(P,V,A,T):-
   append(P,ConcatedP),
   append(V,ConcatedV),
@@ -115,7 +137,16 @@ asignar_misma_var(P,V,A,T):-
   asignar_var(A,WithoutRepeatPV,MF),
   member((A,T),MF).
 
-
+%
+% zip/3
+% zip(+L1,+L2,-L3)
+%
+% Dadas L1, y L2 dos listas instanciadas del mismo tamaño.
+% instancia en L3 una lista de tuplas donde
+% el primer elemento de la tupla pertenece a L1 
+% y el segundo a L2, y ambos elementos están en 
+% la misma posición de su lista.
+% 
 zip([],[],[]).
 zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
 
@@ -127,13 +158,12 @@ zip([X|XS], [Y|YS], [(X,Y)|Z]):- zip(XS,YS,Z).
 % quitar/3
 % quitar(+E, +L, -R).
 %
-% Dado E un atomo y L una lista de atomos, instancia en R 
-% el resultado de quitar todas las apariciones de E en L. 
+% Dado E un atomo instanciado y L una lista instanciada de atomos, 
+% instancia en R el resultado de quitar todas las apariciones de E en L. 
 % L puede contener elemento instanciados y 
 % no instanciados. E puede no estar instanciado.
 %
 quitar(_,[],[]).
-
 quitar(E,[A|L],R):- E==A, quitar(E,L,R).
 quitar(E,[A|L],[A|R]):- E\==A, quitar(E,L,R).
 
@@ -167,46 +197,60 @@ cant_distintos([A|L],S):- quitar(A,L,R),
 descifrar(S,M):-
   palabras(S,P),
   palabras_con_variables(P,N),
-  generar_soluciones(N,MCodes),
-  ground(MCodes),
-  setof(_,maplist(string_codes,MList,MCodes),_),
-  implode(MList," ",M).
+  validar_palabra_en_dict(N),
+  agregar_espacio_a_palabras(N,V),
+  validar_solo_letras_por_simbolos(S,V),
+  string_codes(M,V).
 
 %
-% generar_soluciones/2
+% validar_solo_letras_por_simbolo/2
 %
-generar_soluciones([],[]).
-generar_soluciones([N|NS],[M|MCodes]):-
-  diccionario_lista(L),
-  match(L,N,M),
-  generar_soluciones(NS,MCodes).
+% validar_solo_letras_por_simbolo(+N,+M) 
+%
+% Dada N instanciada, una lista de listas de atomos
+% y M istanciada una lista de listas de var frescas
+% es exito si cada letra se corresponde con una var
+% fresca.
+%
+validar_solo_letras_por_simbolos([],[]).
+validar_solo_letras_por_simbolos([X|XS],[Y|YS]):- validar_solo_letras_por_simbolo_aux(X,Y,XS,YS),
+                                                  validar_solo_letras_por_simbolos(XS,YS).
+%
+% validar_solo_letras_por_simbolo_aux/4
+% validar_solo_letras_por_simbolo_aux(+X,+Y,+XS,+YS)
+% 
+% Auxiliar para validar_solo_letras_por_simbolos
+% Funcionamiento trivial.
+%
+validar_solo_letras_por_simbolo_aux(_,_,[],[]).
+validar_solo_letras_por_simbolo_aux(X,Y,[X|ZS],[Y|WS]):- validar_solo_letras_por_simbolo_aux(X,Y,ZS,WS).
+validar_solo_letras_por_simbolo_aux(X,Y,[Z|ZS],[W|WS]):- X\==Z,
+                                                         Y\==W,
+                                                         validar_solo_letras_por_simbolo_aux(X,Y,ZS,WS).
 
 %
-% match/3
+% agregar_espacio_a_palabras/2
+% agregar_espacio_a_palabras(+N, -V)
 %
-match(L,N,N):-
-  length(L, LengthL),
-  length(N, LengthN),
-  LengthL=:=LengthN,
-  cambiar_var_por_valor(L,N).
+% Dada N una lista de listas instanciada,
+% instancia en V 'juntar_con' de N con el
+% número 32 como caracter separador.
+% El numero 32 es el codigo del atomo espacio. 
+% 
+agregar_espacio_a_palabras(N,V) :- juntar_con(N, 32, V).
 
 %
-% cambiar_var_por_valor/2
+% validar_palabra_en_dict/1
+% validar_palabra_en_dict(+P).
 %
-cambiar_var_por_valor([],[]).
-cambiar_var_por_valor([L|LS], [L|AS]):-
-  cambiar_var_por_valor(LS,AS).
-
+% Dada P una lista de listas de codigos instanciada 
+% Es exito si los strings asociados a esas listas 
+% de cógidos pertenecen al diccionario cargado.
 %
-% implode/3
-%
-implode([],_,"").
-implode([A],_,A).
-implode([A|XS],C,S):-
-  XS \= [],
-  implode(XS,C,R),
-  string_concat(A,C,T),
-  string_concat(T,R,S).
+% 
+validar_palabra_en_dict([]).
+validar_palabra_en_dict([P|PS]):- diccionario_lista(P),
+                                  validar_palabra_en_dict(PS).
 
 %==============================================================
 %
@@ -215,29 +259,46 @@ implode([A|XS],C,S):-
 % descifrar_sin_espacios/2
 % descifrar_sin_espacios(S, M)
 %
-% Falta implementar.
+% descifrar_sin_espacios(+S,-M)
 %
+% Dada en S una lista instanciada sin atomos
+% 'espacio' instancie en M los posibles mensajes descifrados 
+% utilizando las palabras del diccionario/1,
+% intercalando los espacios necesarios para que el mensaje 
+% use todos los símbolos.
+%
+descifrar_sin_espacios(S,M):- separar_con_espacios(S,E),
+                              descifrar(E,M).
 
-descifrar_sin_espacios(S,M):-
-  separar_con_espacios(S,E),
-  descifrar(E,M).
-
+%
+% separar_con_espacios/2
+% separar_con_espacios(+S, -M)
+%
+% Dada en S una lista de atomos
+% instancia en E esa lista de atomos
+% con atomos 'espacio' entre sus elementos.
+% Cada solución E es una de las posibles 
+% combinaciones, SIN el atomo 'espacio'
+% en la ultima posición.
+%
 separar_con_espacios([],[]).
-separar_con_espacios(S,E):-
-  agregar_espacios(S,E),
-  last(E,M),
-  M \== espacio.
+separar_con_espacios(S,E):- agregar_espacios(S,E),
+                            last(E,M),
+                            M \== espacio.
 
-%  append(L1,L2,S),
-%  select(espacio,E1, L1),
-%  select(espacio,E2, L2),
-%  append(E1,E2, E).
-  
+%
+% agregar_espacios/2
+% agregar_espacios(+S,-E)
+%
+% Dada en S una lista de atomos
+% instancia en E esa lista de atomos
+% con atomos 'espacio' entre sus elementos.
+% Cada solución E es una de las posibles 
+% combinaciones.  
+%
 agregar_espacios([],[]).
 agregar_espacios([S|SS],[S,espacio|EE]):- agregar_espacios(SS,EE).
 agregar_espacios([S|SS],[S|EE]):- agregar_espacios(SS,EE).
-
-
 
 %==============================================================
 %
@@ -247,4 +308,5 @@ agregar_espacios([S|SS],[S|EE]):- agregar_espacios(SS,EE).
 % mensajes_mas_parejos(S, M)
 %
 % Falta implementar.
+%
 %
